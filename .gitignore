@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.sqlite3
+
+# Virtual environment
+venv/
+.env
+
+# Vector databases / generated data
+qdrant_data/
+vectorstore/
+
+# Uploaded / processed documents
+# docs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Model cache (HuggingFace / Transformers)
+.cache/
+huggingface/
+transformers/
+
+# PyTorch cache
+torch_extensions/
+
+# Temporary files
+tmp/
+*.tmp

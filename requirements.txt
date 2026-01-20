@@ -1,0 +1,26 @@
+# Core
+python-dotenv>=1.0.0
+
+# Document processing
+pymupdf==1.24.10
+python-pptx==1.0.2
+Pillow==10.4.0
+requests==2.32.3
+
+# ML / LLM
+torch>=2.1.0
+transformers>=4.38.0
+sentence-transformers>=2.6.0
+
+# LlamaIndex (compatible versions)
+llama-index-core==0.10.58
+llama-index-readers-file==0.1.30
+llama-index-llms-huggingface==0.2.8
+llama-index-embeddings-huggingface==0.1.4
+llama-index-vector-stores-qdrant==0.2.10
+
+# Vector DB
+qdrant-client==1.9.1
+
+# Optional (image utils)
+opencv-python>=4.9.0

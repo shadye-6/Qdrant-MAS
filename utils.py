@@ -48,11 +48,16 @@ def is_graph(image_content):
     return False
 
 
+def prof(label):
+    print(f"[{time.strftime('%H:%M:%S')}] {label}", flush=True)
+
 def process_graph(image_content, llm):
+    prof("Graph processing start")
     deplot_description = process_graph_deplot(image_content)
     response = llm.complete(
         "Explain the following chart data:\n" + deplot_description
     )
+    prof("Graph processing end")
     return response.text
 
 

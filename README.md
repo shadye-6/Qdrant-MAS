@@ -1,73 +1,126 @@
-# Multimodal Neuro-Symbolic RAG Agent
+Multimodal Neuro-Symbolic RAG Agent
 
-A local-first, multimodal Retrieval-Augmented Generation (RAG) system combining **vector search**, **knowledge graphs**, and **long-term memory** with traceable reasoning.
+A local-first, multimodal Retrieval-Augmented Generation (RAG) system combining vector search, knowledge graphs, and long-term memory with traceable reasoning.
 
-This project ingests documents (text, PDF, PPT, images), extracts structured entities and relations into **Neo4j**, embeds content into **Qdrant**, stores conversational memory with decay-ready architecture, and dynamically routes user queries to either vector retrieval or graph reasoning.
+This project ingests documents (text, PDF, PPT, images), extracts structured entities and relations into Neo4j, embeds content into Qdrant, stores conversational memory with decay-ready architecture, and dynamically routes user queries to either vector retrieval or graph reasoning.
 
-The system is designed for research and experimentation in **neuro-symbolic AI**, **hybrid retrieval**, and **transparent RAG pipelines**.
+The system is designed for research and experimentation in neuro-symbolic AI, hybrid retrieval, and transparent RAG pipelines.
 
----
-
-## Key Features
-
-- Multimodal ingestion: TXT, PDF, PPT/PPTX, images
-- Knowledge graph extraction using local LLM (llama.cpp)
-- Vector search using Qdrant + SentenceTransformers
-- Graph storage and querying using Neo4j
-- Long-term memory agent (text + image embeddings)
-- Query router (vector vs graph reasoning)
-- Local LLM inference (HuggingFace or llama.cpp)
-- Traceable chunk-level knowledge linking
-- Modular agent architecture
 
 ---
 
-## System Architecture (High Level)
+Key Features
 
-Documents | v Document Processor | +--> Vector Embeddings (Qdrant) | +--> Graph Extraction (LLM) --> Neo4j Knowledge Graph | +--> Chunk Metadata
+Multimodal ingestion: TXT, PDF, PPT/PPTX, images
 
-User Query | v OrchestratorAgent |-- vector --> Qdrant retrieval |-- graph  --> Neo4j relationship query | v LLM Generation | v MemoryAgent (Qdrant long-term memory)
+Knowledge graph extraction using local LLM (llama.cpp)
 
----
+Vector search using Qdrant + SentenceTransformers
 
-## Repository Structure
+Graph storage and querying using Neo4j
 
-. ├── agents/ │   ├── graph_extractor.py      # LLM → entities + relations │   ├── graph_store.py          # Neo4j interface │   └── orchestrator.py         # Query routing logic │ ├── document_processors.py      # Multimodal ingestion ├── llm_llama_cpp.py            # llama.cpp wrapper ├── memory_agent.py             # Long-term memory with Qdrant ├── rag_terminal.py             # Main CLI application ├── requirements.txt └── README.md
+Long-term memory agent (text + image embeddings)
 
----
+Query router (vector vs graph reasoning)
 
-## Requirements
+Local LLM inference (HuggingFace or llama.cpp)
 
-### System
+Traceable chunk-level knowledge linking
 
-- Python 3.9+
-- Neo4j 5.x (running locally)
-- LibreOffice (for PPT → PDF conversion)
-- CUDA (optional, for GPU acceleration)
-- llama.cpp compatible GGUF model (e.g., Mistral)
+Modular agent architecture
 
-### Python Libraries
 
-Installed from `requirements.txt`, including:
-
-- llama-index
-- qdrant-client
-- neo4j
-- sentence-transformers
-- transformers
-- torch
-- pillow
-- pymupdf (fitz)
-- python-pptx
-- llama-cpp-python
 
 ---
 
-## Installation
+System Architecture (High Level)
 
-### 1. Clone repository
+Documents
+  |
+  v
+Document Processor
+  +--> Vector Embeddings (Qdrant)
+  +--> Graph Extraction (LLM) --> Neo4j Knowledge Graph
+  +--> Chunk Metadata
 
-```bash
+User Query
+  |
+  v
+OrchestratorAgent
+  |-- vector --> Qdrant retrieval
+  |-- graph  --> Neo4j relationship query
+  v
+LLM Generation
+  v
+MemoryAgent (Qdrant long-term memory)
+
+
+---
+
+Repository Structure
+
+.
+├── agents/
+│   ├── graph_extractor.py      # LLM → entities + relations
+│   ├── graph_store.py          # Neo4j interface
+│   └── orchestrator.py         # Query routing logic
+├── document_processors.py      # Multimodal ingestion
+├── llm_llama_cpp.py            # llama.cpp wrapper
+├── memory_agent.py             # Long-term memory with Qdrant
+├── rag_terminal.py             # Main CLI application
+├── requirements.txt
+└── README.md
+
+
+---
+
+Requirements
+
+System
+
+Python 3.9+
+
+Neo4j 5.x (running locally)
+
+LibreOffice (for PPT → PDF conversion)
+
+CUDA (optional, for GPU acceleration)
+
+llama.cpp compatible GGUF model (e.g., Mistral)
+
+
+Python Libraries
+
+Installed from requirements.txt, including:
+
+llama-index
+
+qdrant-client
+
+neo4j
+
+sentence-transformers
+
+transformers
+
+torch
+
+pillow
+
+pymupdf (fitz)
+
+python-pptx
+
+llama-cpp-python
+
+
+
+---
+
+Installation
+
+1. Clone repository
+
 git clone <repo_url>
 cd <repo_name>
 
@@ -156,9 +209,9 @@ Provide a folder containing:
 
 .pdf
 
-.ppt/.pptx
+.ppt / .pptx
 
-.png/.jpg
+.png / .jpg
 
 
 
@@ -208,7 +261,16 @@ agents/orchestrator.py
 
 Graph keywords:
 
-relationship, connect, cause, impact, depend, affect, between, related, how does, why does
+relationship
+connect
+cause
+impact
+depend
+affect
+between
+related
+how does
+why does
 
 
 ---
@@ -228,12 +290,17 @@ LLM extraction format:
 
 Stored as:
 
-Nodes: (:Entity {id, name, type})
+Nodes:
 
-Relations: [:RELATION {type}]
+(:Entity {id, name, type})
 
-Chunk links: (:Chunk)-[:MENTIONS]->(:Entity)
+Relations:
 
+[:RELATION {type}]
+
+Chunk links:
+
+(:Chunk)-[:MENTIONS]->(:Entity)
 
 
 ---
@@ -252,8 +319,8 @@ Stored in Qdrant
 
 Retrieved every query
 
-Can be cleared:
 
+Can be cleared:
 
 clear_memory
 
@@ -262,19 +329,19 @@ clear_memory
 
 Configuration Points
 
-Change LLM (Graph Extraction)
+Change LLM (Graph Extraction):
 
 initialize_llm()
 
-Change LLM (Answer generation)
+Change LLM (Answer generation):
 
 initialize_hf_llm()
 
-Chunk size
+Chunk size:
 
 SentenceSplitter(chunk_size=256, chunk_overlap=50)
 
-Graph DB credentials
+Graph DB credentials:
 
 GraphStore(...)
 

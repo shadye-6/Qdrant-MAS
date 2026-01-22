@@ -8,7 +8,6 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.llms.huggingface import HuggingFaceLLM
 from llm_llama_cpp import LlamaCppLLM
 
-
 from qdrant_client import QdrantClient
 
 from document_processors import load_multimodal_data
@@ -22,16 +21,8 @@ from agents.graph_extractor import GraphExtractor
 # Model initialization
 # ============================================================
 
-# def initialize_hf_llm():
-#     model_id = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
-#     return HuggingFaceLLM(
-#         model_name=model_id,
-#         tokenizer_name=model_id,
-#         device_map="auto",
-#         max_new_tokens=256,
-#     )
 def initialize_hf_llm():
-    model_id = "Qwen/Qwen2.5-3B-Instruct"
+    model_id = "TinyLlama/TinyLlama-1.1B-Chat-v1.0"
     return HuggingFaceLLM(
         model_name=model_id,
         tokenizer_name=model_id,
@@ -42,6 +33,7 @@ def initialize_hf_llm():
 
 def initialize_llm():
     return LlamaCppLLM(model_path="models/mistral.gguf")
+
 
 def initialize_settings():
     Settings.embed_model = HuggingFaceEmbedding(
@@ -104,6 +96,7 @@ def truncate_text(text, max_chars=1200):
         return text[:max_chars] + "\n[truncated]"
     return text
 
+
 def extract_keywords(query, max_words=5):
     words = [
         w.lower().strip(".,!?")
@@ -111,7 +104,6 @@ def extract_keywords(query, max_words=5):
         if len(w) > 3
     ]
     return words[:max_words]
-
 
 
 # ============================================================
@@ -122,7 +114,10 @@ def main():
     print("\nInitializing system...\n")
 
     initialize_settings()
-    graph_llm = initialize_llm()   # llama.cpp
+
+    vector_llm = Settings.llm
+    graph_llm = initialize_llm()
+
     graph_extractor = GraphExtractor(graph_llm)
 
     qdrant_client = initialize_qdrant()
@@ -144,7 +139,8 @@ def main():
     index = create_index(documents, qdrant_client)
     print_stage("Stage D: Index creation completed")
 
-    # query_engine = index.as_query_engine(similarity_top_k=3)
+    # ✅ ENABLE QUERY ENGINE
+    query_engine = index.as_query_engine(similarity_top_k=3)
 
     print("\nSystem ready. Type your questions below.")
     print("Type 'exit' to quit.")
@@ -181,7 +177,7 @@ def main():
         print_stage("Stage 4: Routing query")
         route = router.route(user_query)
         print_stage(f"Stage 4b: Route determined: {route}")
-        
+
         print_stage("Stage 4c: Retrieving graph context")
         graph_context = ""
         if route == "graph":
@@ -193,21 +189,53 @@ def main():
             print_stage("Stage 4d: Vector retrieval path selected")
 
         print_stage("Stage 5: Building augmented query")
-        
-        augmented_query = f"""Memory:
-{memory_text}
+
+        if route == "graph":
+            augmented_query = f"""
+You are a question answering system.
+
+Answer in clear natural language (not JSON).
+
+Use ONLY the graph relationships below as facts.
 
 Graph knowledge:
 {graph_context}
 
 Question:
 {user_query}
+
+Rules:
+- Answer in one or two sentences.
+- Use entity names exactly as written.
+- Do NOT output JSON.
+- If unknown, say "I don't know".
 """
 
-        print_stage("Stage 6: Running vector retrieval and LLM generation")
+        else:
+            augmented_query = f"""
+You are a factual assistant.
+
+Answer ONLY using the information below.
+If the answer is not contained, say "I don't know".
+
+Memory:
+{memory_text}
+
+Context:
+{graph_context}
+
+Question:
+{user_query}
+"""
+
+        print_stage("Stage 6: Running LLM generation")
 
         try:
-            answer = Settings.llm.complete(augmented_query).text
+            if route == "graph":
+                answer = graph_llm.complete(augmented_query).text
+            else:
+                response = query_engine.query(user_query)
+                answer = str(response)
         except Exception as e:
             print("LLM error:", e)
             continue
@@ -215,7 +243,20 @@ Question:
         print_stage("Stage 7: LLM response received")
 
         print_stage("Stage 8: Storing answer in long-term memory")
-        memory_agent.store_text(answer, metadata={"source": "assistant"})
+        store = False
+
+        if route == "graph":
+            store = True
+        else:
+            if len(answer) > 60 and "i don't know" not in answer.lower():
+                store = True
+
+        if store:
+            memory_agent.store_text(
+                answer,
+                metadata={"source": "assistant", "route": route}
+            )
+
         print_stage("Stage 9: Memory storage completed")
 
         print("\nAssistant:\n")

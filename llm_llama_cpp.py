@@ -19,29 +19,18 @@ if not logger.handlers:
 # Prompt rendering helper
 # ----------------------------
 def _render_prompt(prompt):
-    """
-    Safely render LlamaIndex PromptTemplate into a real string.
-    Handles kwargs + template_var_mappings.
-    """
     try:
         if hasattr(prompt, "template"):
-
             data = {}
 
-            # normal kwargs (query_str, etc.)
             if hasattr(prompt, "kwargs") and prompt.kwargs:
                 data.update(prompt.kwargs)
 
-            # mapped variables (context_str, etc.)
             if hasattr(prompt, "template_var_mappings") and prompt.template_var_mappings:
                 data.update(prompt.template_var_mappings)
 
-            # ensure required keys exist
-            if "context_str" not in data:
-                data["context_str"] = ""
-
-            if "query_str" not in data:
-                data["query_str"] = ""
+            data.setdefault("context_str", "")
+            data.setdefault("query_str", "")
 
             return prompt.template.format(**data)
 
@@ -49,6 +38,7 @@ def _render_prompt(prompt):
         logger.warning(f"PromptTemplate rendering failed: {e}")
 
     return str(prompt)
+
 
 # ----------------------------
 # LLM Wrapper
@@ -60,9 +50,30 @@ class LlamaCppLLM:
 
         self.llm = Llama(
             model_path=model_path,
+
+            # Context
             n_ctx=4096,
+
+            # Threads / GPU
             n_threads=8,
-            n_gpu_layers=40,   # set to 0 for CPU only
+            n_gpu_layers=999,   # set to 0 for CPU only
+
+            # Determinism
+            temperature=0.0,
+            top_p=1.0,
+            top_k=1,
+
+            # Disable randomness
+            repeat_penalty=1.0,
+            presence_penalty=0.0,
+            frequency_penalty=0.0,
+
+            # Prevent runaway
+            max_tokens=256,
+
+            # Formatting control
+            stop=["</s>", "```", "\n\n\n"],
+
             verbose=False,
         )
 
@@ -74,7 +85,7 @@ class LlamaCppLLM:
             def __init__(self):
                 self.context_window = 4096
                 self.num_output = 256
-                self.model_name = "mistral-7b-instruct-gguf"
+                self.model_name = "llama-3-8b-instruct-gguf"
 
         self.metadata = Meta()
 
@@ -89,12 +100,29 @@ class LlamaCppLLM:
         start = time.time()
 
         try:
-            out = self.llm(
-                prompt_text,
-                max_tokens=512,
-                temperature=0.0,
-                stop=["</s>", "```"],
+            system_prompt = (
+                "You are a strict information extraction engine. "
+                "You ONLY output valid JSON according to the schema. "
+                "You never answer questions. You never explain."
             )
+
+            full_prompt = f"""<|begin_of_text|>
+            <|system|>
+            {system_prompt}
+            <|user|>
+            {prompt_text}
+            <|assistant|>
+            """
+
+            out = self.llm(
+                full_prompt,
+                max_tokens=256,
+                temperature=0.0,
+                top_k=1,
+                top_p=1.0,
+                stop=["</s>", "<|eot_id|>", "<|end_of_text|>", "```"],
+            )
+
         except Exception as e:
             logger.error(f"LLM generation failed: {e}")
             raise
@@ -104,7 +132,6 @@ class LlamaCppLLM:
 
         text = out["choices"][0]["text"].strip()
 
-        # Remove common junk prefixes
         for bad in ("Output:", "Answer:", "Response:"):
             if text.startswith(bad):
                 text = text[len(bad):].strip()

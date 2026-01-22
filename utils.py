@@ -90,7 +90,7 @@ def process_graph_deplot(image_content):
             "role": "user",
             "content": f'Generate underlying data table: <img src="data:image/png;base64,{image_b64}" />'
         }],
-        "max_tokens": 512
+        "max_tokens": 256
     }
 
     response = requests.post(invoke_url, headers=headers, json=payload)

@@ -12,7 +12,7 @@ torch>=2.1.0
 transformers>=4.38.0
 sentence-transformers>=2.6.0
 
-# LlamaIndex (compatible versions)
+# LlamaIndex 
 llama-index-core==0.10.58
 llama-index-readers-file==0.1.30
 llama-index-llms-huggingface==0.2.8
@@ -22,5 +22,15 @@ llama-index-vector-stores-qdrant==0.2.10
 # Vector DB
 qdrant-client==1.9.1
 
+# Graph DB
+neo4j>=5.17.0
+
+# llama.cpp bindings
+llama-cpp-python>=0.2.20
+
 # Optional (image utils)
 opencv-python>=4.9.0
+
+# Utilities
+numpy>=1.26.0
+tqdm>=4.66.0
